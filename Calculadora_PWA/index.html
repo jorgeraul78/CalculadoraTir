@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Calc TIR">
+    <meta name="description" content="Calculadora TIR - Compará financiamiento vs inversión alternativa">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <title>Calculadora TIR - Cuotas vs Plazo Fijo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: env(safe-area-inset-top, 20px);
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            -webkit-appearance: none;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .resultado {
+            display: none;
+        }
+
+        .resultado.show {
+            display: block;
+        }
+
+        .recomendacion {
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .recomendacion.cuotas {
+            background: #d1fae5;
+            border: 3px solid #10b981;
+        }
+
+        .recomendacion.contado {
+            background: #dbeafe;
+            border: 3px solid #3b82f6;
+        }
+
+        .recomendacion h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #1f2937;
+        }
+
+        .recomendacion p {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .explicacion {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .explicacion strong {
+            color: #1f2937;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid;
+        }
+
+        .stat-card.purple {
+            background: #f3e8ff;
+            border-color: #a855f7;
+        }
+
+        .stat-card.orange {
+            background: #ffedd5;
+            border-color: #f97316;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .detalle {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .detalle h3 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .detalle ul {
+            list-style: none;
+        }
+
+        .detalle li {
+            color: #4b5563;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        .detalle li:last-child {
+            border-bottom: none;
+        }
+
+        .emoji {
+            font-size: 20px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .toggle-btn.inactive {
+            background: #ddd;
+            color: #666;
+        }
+
+        /* Estilos para tabla de flujo */
+        #tablaFlujo {
+            font-size: 11px;
+        }
+
+        @media (min-width: 768px) {
+            #tablaFlujo {
+                font-size: 13px;
+            }
+        }
+
+        #tablaFlujo th {
+            position: sticky;
+            top: 0;
+            background: #f3f4f6;
+            z-index: 10;
+        }
+
+        /* Install banner */
+        .install-banner {
+            display: none;
+            background: #1f2937;
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .install-banner.show {
+            display: flex;
+        }
+
+        .install-banner button {
+            width: auto;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .install-banner .close-btn {
+            background: transparent;
+            padding: 5px 10px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Banner de instalación -->
+        <div id="installBanner" class="install-banner">
+            <span>📲 Instalá la app</span>
+            <div style="display: flex; gap: 10px;">
+                <button id="installBtn">Instalar</button>
+                <button class="close-btn" onclick="cerrarBanner()">×</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <span class="emoji">🧮</span>
+                <h1>Calculadora TIR</h1>
+            </div>
+            <p style="color: #666; margin-bottom: 20px;">Compará financiamiento vs inversión alternativa</p>
+
+            <div class="input-group">
+                <label>📊 Tipo de Cálculo</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button type="button" id="btnTipoCompra" class="toggle-btn active" onclick="cambiarTipo('compra')">
+                        Compra en Cuotas
+                    </button>
+                    <button type="button" id="btnTipoPrestamo" class="toggle-btn inactive" onclick="cambiarTipo('prestamo')">
+                        Préstamo (FTYC)
+                    </button>
+                </div>
+            </div>
+
+            <!-- MODO COMPRA -->
+            <div id="modoCompra">
+                <div class="input-group">
+                    <label>💵 Precio al Contado ($)</label>
+                    <input type="number" id="precioContado" placeholder="Ej: 619000" inputmode="numeric">
+                </div>
+
+                <div class="input-group">
+                    <label>💳 Modo de ingreso</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button type="button" id="btnModoTotal" class="toggle-btn active" onclick="cambiarModo('total')">
+                            Precio Total
+                        </button>
+                        <button type="button" id="btnModoCuota" class="toggle-btn inactive" onclick="cambiarModo('cuota')">
+                            Valor Cuota
+                        </button>
+                    </div>
+                </div>
+
+                <div id="inputTotal" class="input-group">
+                    <label>💰 Precio Total en Cuotas ($)</label>
+                    <input type="number" id="precioCuotas" placeholder="Ej: 786000" inputmode="numeric">
+                </div>
+
+                <div id="inputCuota" class="input-group" style="display: none;">
+                    <label>💰 Valor de cada Cuota ($)</label>
+                    <input type="number" id="valorCuota" placeholder="Ej: 131000" inputmode="numeric">
+                </div>
+
+                <div class="input-group">
+                    <label>📅 Cantidad de Cuotas</label>
+                    <input type="number" id="cantidadCuotas" placeholder="Ej: 6" inputmode="numeric">
+                </div>
+
+                <div class="input-group">
+                    <label>🏦 Tasa Plazo Fijo Mensual (%)</label>
+                    <input type="number" step="0.01" id="tasaPlazoFijo" value="2.5" placeholder="2.5" inputmode="decimal">
+                </div>
+            </div>
+
+            <!-- MODO PRÉSTAMO -->
+            <div id="modoPrestamo" style="display: none;">
+                <div class="input-group">
+                    <label>💰 Monto del Préstamo ($)</label>
+                    <input type="number" id="montoPrestamo" placeholder="Ej: 99810000" inputmode="numeric">
+                </div>
+
+                <div class="input-group">
+                    <label>📊 TNA - Tasa Nominal Anual del Préstamo (%)</label>
+                    <input type="number" step="0.01" id="tasaPrestamo" placeholder="Ej: 16.13" inputmode="decimal">
+                    <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">La tasa que te informa el banco (se divide por 12)</small>
+                </div>
+
+                <div class="input-group">
+                    <label>📅 Cantidad de Cuotas</label>
+                    <input type="number" id="cuotasPrestamo" placeholder="Ej: 24" inputmode="numeric">
+                </div>
+
+                <div class="input-group">
+                    <label>🏦 Tasa de Inversión Alternativa Mensual (%)</label>
+                    <input type="number" step="0.01" id="tasaInversionPrestamo" value="2.5" placeholder="2.5" inputmode="decimal">
+                    <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">Si tenés el capital, ¿cuánto te rinde mensualmente?</small>
+                </div>
+            </div>
+
+            <button onclick="calcular()">Calcular y Comparar</button>
+        </div>
+
+        <div id="resultado" class="resultado">
+            <div class="card">
+                <div id="recomendacion" class="recomendacion">
+                    <h2 id="tituloRecomendacion"></h2>
+                    <p id="textoRecomendacion"></p>
+                    <div class="explicacion">
+                        <strong>💡 Explicación:</strong>
+                        <p id="explicacion"></p>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="stat-card purple">
+                        <div class="stat-label" style="color: #7c3aed;">Costo Mensual</div>
+                        <div class="stat-value" style="color: #7c3aed;" id="tirMensual"></div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-label" style="color: #7c3aed;" id="labelAnual">Costo Anual (TEA)</div>
+                        <div class="stat-value" style="color: #7c3aed;" id="tirAnual"></div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-label" style="color: #ea580c;" id="labelCuota">Cuota Mensual</div>
+                        <div class="stat-value" style="color: #ea580c;" id="cuotaMensual"></div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-label" style="color: #ea580c;" id="labelCosto">Costo Financiero</div>
+                        <div class="stat-value" style="color: #ea580c;" id="costoFinanciero"></div>
+                    </div>
+                </div>
+
+                <div class="detalle">
+                    <h3>📊 Análisis Detallado</h3>
+                    <ul id="detalleList"></ul>
+                </div>
+
+                <div id="flujoFondos" style="display: none; margin-top: 20px;">
+                    <div class="detalle">
+                        <h3>💰 Flujo de Fondos - Comparación Mes a Mes</h3>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Comparación entre tomar el préstamo vs usar capital propio</p>
+                        <div style="overflow-x: auto;">
+                            <table id="tablaFlujo" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead>
+                                    <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                        <th style="padding: 10px; text-align: center;">Mes</th>
+                                        <th style="padding: 10px; text-align: right;">Saldo Préstamo</th>
+                                        <th style="padding: 10px; text-align: right;">Capital</th>
+                                        <th style="padding: 10px; text-align: right;">Intereses</th>
+                                        <th style="padding: 10px; text-align: right;">Cuota</th>
+                                        <th style="padding: 10px; text-align: right; background: #e0f2fe;">Inversión Alt.*</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTabla"></tbody>
+                            </table>
+                        </div>
+                        <p style="color: #666; font-size: 12px; margin-top: 10px;">
+                            * <strong>Inversión Alternativa:</strong> Simula que invertís el monto del préstamo y vas retirando cada cuota. Muestra cuánto te quedaría al final.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; color: rgba(255,255,255,0.7); font-size: 12px; padding: 20px;">
+            Calculadora TIR v1.0
+        </div>
+    </div>
+
+    <script>
+        let modoActual = 'total';
+        let tipoCalculo = 'compra';
+        let deferredPrompt;
+
+        // PWA Install
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBanner').classList.add('show');
+        });
+
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('installBanner').classList.remove('show');
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        function cerrarBanner() {
+            document.getElementById('installBanner').classList.remove('show');
+        }
+
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW registrado'))
+                    .catch(err => console.log('SW error:', err));
+            });
+        }
+
+        function cambiarTipo(tipo) {
+            tipoCalculo = tipo;
+            const modoCompra = document.getElementById('modoCompra');
+            const modoPrestamo = document.getElementById('modoPrestamo');
+            const btnCompra = document.getElementById('btnTipoCompra');
+            const btnPrestamo = document.getElementById('btnTipoPrestamo');
+
+            if (tipo === 'compra') {
+                modoCompra.style.display = 'block';
+                modoPrestamo.style.display = 'none';
+                btnCompra.className = 'toggle-btn active';
+                btnPrestamo.className = 'toggle-btn inactive';
+            } else {
+                modoCompra.style.display = 'none';
+                modoPrestamo.style.display = 'block';
+                btnCompra.className = 'toggle-btn inactive';
+                btnPrestamo.className = 'toggle-btn active';
+            }
+        }
+
+        function cambiarModo(modo) {
+            modoActual = modo;
+            const inputTotal = document.getElementById('inputTotal');
+            const inputCuota = document.getElementById('inputCuota');
+            const btnTotal = document.getElementById('btnModoTotal');
+            const btnCuota = document.getElementById('btnModoCuota');
+
+            if (modo === 'total') {
+                inputTotal.style.display = 'block';
+                inputCuota.style.display = 'none';
+                btnTotal.className = 'toggle-btn active';
+                btnCuota.className = 'toggle-btn inactive';
+            } else {
+                inputTotal.style.display = 'none';
+                inputCuota.style.display = 'block';
+                btnTotal.className = 'toggle-btn inactive';
+                btnCuota.className = 'toggle-btn active';
+            }
+        }
+
+        function calcularTIR(precioContado, cuotaMensual, numCuotas) {
+            let tir = 0.05;
+            const tolerancia = 0.0001;
+            const maxIteraciones = 1000;
+            
+            for (let i = 0; i < maxIteraciones; i++) {
+                let vpActual = 0;
+                let derivada = 0;
+                
+                for (let n = 1; n <= numCuotas; n++) {
+                    const factor = Math.pow(1 + tir, n);
+                    vpActual += cuotaMensual / factor;
+                    derivada -= n * cuotaMensual / (factor * (1 + tir));
+                }
+                
+                const diferencia = vpActual - precioContado;
+                
+                if (Math.abs(diferencia) < tolerancia) {
+                    return tir * 100;
+                }
+                
+                tir = tir - diferencia / derivada;
+                
+                if (tir < -0.5) tir = -0.5;
+            }
+            
+            return tir * 100;
+        }
+
+        function calcular() {
+            if (tipoCalculo === 'compra') {
+                calcularCompra();
+            } else {
+                calcularPrestamo();
+            }
+        }
+
+        function calcularCompra() {
+            const pc = parseFloat(document.getElementById('precioContado').value);
+            const cuotas = parseInt(document.getElementById('cantidadCuotas').value);
+            const tasaPF = parseFloat(document.getElementById('tasaPlazoFijo').value);
+
+            let pq;
+            
+            if (modoActual === 'total') {
+                pq = parseFloat(document.getElementById('precioCuotas').value);
+            } else {
+                const valorCuota = parseFloat(document.getElementById('valorCuota').value);
+                if (!valorCuota || valorCuota <= 0) {
+                    alert('Por favor ingresá el valor de la cuota');
+                    return;
+                }
+                pq = valorCuota * cuotas;
+            }
+
+            if (!pc || !pq || !cuotas || !tasaPF || pc <= 0 || pq <= 0 || cuotas <= 0) {
+                alert('Por favor completá todos los campos con valores válidos');
+                return;
+            }
+
+            const cuotaMensual = pq / cuotas;
+            const tirMensual = calcularTIR(pc, cuotaMensual, cuotas);
+            const tirAnual = (Math.pow(1 + tirMensual/100, 12) - 1) * 100;
+            const costoFinanciero = pq - pc;
+            const porcentajeRecargo = (costoFinanciero / pc) * 100;
+            
+            const conviene = tirMensual < tasaPF ? 'cuotas' : 'contado';
+            const diferenciaTasa = Math.abs(tirMensual - tasaPF);
+
+            mostrarResultado({
+                tirMensual,
+                tirAnual,
+                tasaPF,
+                cuotaMensual,
+                costoFinanciero,
+                porcentajeRecargo,
+                conviene,
+                diferenciaTasa,
+                tipo: 'compra',
+                cuotas
+            });
+        }
+
+        function calcularPrestamo() {
+            const monto = parseFloat(document.getElementById('montoPrestamo').value);
+            const tasaAnual = parseFloat(document.getElementById('tasaPrestamo').value);
+            const cuotas = parseInt(document.getElementById('cuotasPrestamo').value);
+            const tasaInversion = parseFloat(document.getElementById('tasaInversionPrestamo').value);
+
+            if (!monto || !tasaAnual || !cuotas || !tasaInversion || monto <= 0 || tasaAnual <= 0 || cuotas <= 0) {
+                alert('Por favor completá todos los campos con valores válidos');
+                return;
+            }
+
+            const tasaMensualPrestamo = tasaAnual / 12;
+            const capitalPorCuota = monto / cuotas;
+            
+            let totalIntereses = 0;
+            let saldo = monto;
+            
+            for (let i = 1; i <= cuotas; i++) {
+                const intereses = saldo * (tasaMensualPrestamo / 100);
+                totalIntereses += intereses;
+                saldo -= capitalPorCuota;
+            }
+            
+            const totalPagado = monto + totalIntereses;
+            const cuotaPromedio = totalPagado / cuotas;
+            const costoFinanciero = totalIntereses;
+            const porcentajeRecargo = (costoFinanciero / monto) * 100;
+            
+            const conviene = tasaMensualPrestamo < tasaInversion ? 'prestamo' : 'capital';
+            const diferenciaTasa = Math.abs(tasaMensualPrestamo - tasaInversion);
+
+            mostrarResultado({
+                tirMensual: tasaMensualPrestamo,
+                tirAnual: tasaAnual,
+                tasaPF: tasaInversion,
+                cuotaMensual: cuotaPromedio,
+                costoFinanciero,
+                porcentajeRecargo,
+                conviene,
+                diferenciaTasa,
+                tipo: 'prestamo',
+                cuotas,
+                monto,
+                capitalPorCuota
+            });
+        }
+
+        function mostrarResultado(datos) {
+            const resultadoDiv = document.getElementById('resultado');
+            const recomendacionDiv = document.getElementById('recomendacion');
+            
+            resultadoDiv.classList.add('show');
+
+            let titulo, texto, explicacion;
+
+            if (datos.tipo === 'compra') {
+                if (datos.conviene === 'cuotas') {
+                    recomendacionDiv.className = 'recomendacion cuotas';
+                    titulo = '💳 ¡CONVIENE FINANCIAR!';
+                    texto = `Financiamiento: ${datos.tirMensual.toFixed(2)}% mensual | Plazo Fijo: ${datos.tasaPF.toFixed(2)}% mensual`;
+                    explicacion = `Conviene financiar porque el costo del financiamiento (${datos.tirMensual.toFixed(2)}% mensual) es MENOR a lo que ganás invirtiendo tu plata (${datos.tasaPF.toFixed(2)}% mensual). Si financiás, mantenés tu capital invertido ganando más de lo que te cuesta el crédito. Diferencial positivo: ${datos.diferenciaTasa.toFixed(2)}% mensual.`;
+                } else {
+                    recomendacionDiv.className = 'recomendacion contado';
+                    titulo = '💰 ¡CONVIENE AL CONTADO!';
+                    texto = `Financiamiento: ${datos.tirMensual.toFixed(2)}% mensual | Plazo Fijo: ${datos.tasaPF.toFixed(2)}% mensual`;
+                    explicacion = `Conviene pagar al contado porque el financiamiento te cuesta ${datos.tirMensual.toFixed(2)}% mensual, mientras que invertir esa plata solo te rinde ${datos.tasaPF.toFixed(2)}% mensual. Si financiás, tendrías un diferencial negativo de ${datos.diferenciaTasa.toFixed(2)}% mensual (perdés plata vs pagar al contado).`;
+                }
+            } else {
+                if (datos.conviene === 'prestamo') {
+                    recomendacionDiv.className = 'recomendacion cuotas';
+                    titulo = '✅ ¡CONVIENE EL PRÉSTAMO!';
+                    texto = `Préstamo: ${datos.tirMensual.toFixed(2)}% mensual | Tu inversión: ${datos.tasaPF.toFixed(2)}% mensual`;
+                    explicacion = `Conviene tomar el préstamo porque te cuesta ${datos.tirMensual.toFixed(2)}% mensual, MENOS de lo que rinde tu inversión alternativa (${datos.tasaPF.toFixed(2)}% mensual). Dejás tu capital trabajando a mayor tasa. Diferencial positivo: ${datos.diferenciaTasa.toFixed(2)}% mensual a tu favor.`;
+                } else {
+                    recomendacionDiv.className = 'recomendacion contado';
+                    titulo = '💰 ¡CONVIENE CAPITAL PROPIO!';
+                    texto = `Préstamo: ${datos.tirMensual.toFixed(2)}% mensual | Tu inversión: ${datos.tasaPF.toFixed(2)}% mensual`;
+                    explicacion = `Conviene usar capital propio porque el préstamo te cuesta ${datos.tirMensual.toFixed(2)}% mensual, MÁS de lo que ganarías invirtiendo (${datos.tasaPF.toFixed(2)}% mensual). Diferencial negativo: ${datos.diferenciaTasa.toFixed(2)}% mensual en contra del préstamo.`;
+                }
+            }
+
+            document.getElementById('tituloRecomendacion').textContent = titulo;
+            document.getElementById('textoRecomendacion').textContent = texto;
+            document.getElementById('explicacion').textContent = explicacion;
+
+            if (datos.tipo === 'prestamo') {
+                document.getElementById('labelAnual').textContent = 'TNA (Anual)';
+                document.getElementById('labelCuota').textContent = 'Cuota Promedio';
+                document.getElementById('labelCosto').textContent = 'Total Intereses';
+            } else {
+                document.getElementById('labelAnual').textContent = 'Costo Anual (TEA)';
+                document.getElementById('labelCuota').textContent = 'Cuota Mensual';
+                document.getElementById('labelCosto').textContent = 'Costo Financiero';
+            }
+
+            document.getElementById('tirMensual').textContent = datos.tirMensual.toFixed(2) + '%';
+            document.getElementById('tirAnual').textContent = datos.tirAnual.toFixed(2) + '%';
+            document.getElementById('cuotaMensual').textContent = '$' + formatNumber(datos.cuotaMensual);
+            document.getElementById('costoFinanciero').textContent = '$' + formatNumber(datos.costoFinanciero);
+
+            const detalles = [
+                datos.tipo === 'prestamo' ? `Monto del préstamo: $${formatNumber(datos.monto)}` : `Recargo total: $${formatNumber(datos.costoFinanciero)} (${datos.porcentajeRecargo.toFixed(2)}% sobre el contado)`,
+                datos.tipo === 'prestamo' ? `Cuota promedio: $${formatNumber(datos.cuotaMensual)} (sistema alemán)` : `Cuota mensual: $${formatNumber(datos.cuotaMensual)}`,
+                `Costo mensual: ${datos.tirMensual.toFixed(2)}%`,
+                datos.tipo === 'prestamo' ? `TNA: ${datos.tirAnual.toFixed(2)}%` : `Costo anual (TEA): ${datos.tirAnual.toFixed(2)}%`,
+                datos.tipo === 'prestamo' ? `Tasa inversión alternativa: ${datos.tasaPF.toFixed(2)}%` : `Tasa plazo fijo mensual: ${datos.tasaPF.toFixed(2)}%`,
+                `Diferencial: ${datos.diferenciaTasa.toFixed(2)}% mensual ${datos.conviene === 'cuotas' || datos.conviene === 'prestamo' ? 'a favor' : 'en contra'}`
+            ];
+
+            document.getElementById('detalleList').innerHTML = detalles.map(d => `<li>${d}</li>`).join('');
+
+            const flujoFondosDiv = document.getElementById('flujoFondos');
+            if (datos.tipo === 'prestamo') {
+                flujoFondosDiv.style.display = 'block';
+                generarFlujoFondos(datos);
+            } else {
+                flujoFondosDiv.style.display = 'none';
+            }
+
+            resultadoDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function generarFlujoFondos(datos) {
+            const tasaMensual = datos.tirMensual / 100;
+            const tasaInversion = datos.tasaPF / 100;
+            const cuotas = datos.cuotas;
+            const monto = datos.monto;
+            const capitalPorCuota = datos.capitalPorCuota;
+            
+            let saldoPrestamo = monto;
+            let saldoInversion = monto;
+            
+            let html = '';
+            
+            html += `
+                <tr style="background: #fef3c7; border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 10px; text-align: center; font-weight: bold;">0</td>
+                    <td style="padding: 10px; text-align: right;">$${formatNumber(monto)}</td>
+                    <td style="padding: 10px; text-align: right;">$0</td>
+                    <td style="padding: 10px; text-align: right;">$0</td>
+                    <td style="padding: 10px; text-align: right; font-weight: bold;">$0</td>
+                    <td style="padding: 10px; text-align: right; background: #e0f2fe; font-weight: bold;">$${formatNumber(saldoInversion)}</td>
+                </tr>
+            `;
+            
+            for (let mes = 1; mes <= cuotas; mes++) {
+                const intereses = saldoPrestamo * tasaMensual;
+                const amortizacion = capitalPorCuota;
+                const cuotaMensual = amortizacion + intereses;
+                saldoPrestamo -= amortizacion;
+                
+                const rendimiento = saldoInversion * tasaInversion;
+                saldoInversion = saldoInversion + rendimiento - cuotaMensual;
+                
+                const esUltimo = mes === cuotas;
+                
+                html += `
+                    <tr style="border-bottom: 1px solid #e5e7eb; ${esUltimo ? 'background: #f0fdf4;' : ''}">
+                        <td style="padding: 10px; text-align: center;">${mes}</td>
+                        <td style="padding: 10px; text-align: right;">$${formatNumber(Math.max(0, saldoPrestamo))}</td>
+                        <td style="padding: 10px; text-align: right;">$${formatNumber(amortizacion)}</td>
+                        <td style="padding: 10px; text-align: right;">$${formatNumber(intereses)}</td>
+                        <td style="padding: 10px; text-align: right; font-weight: bold;">$${formatNumber(cuotaMensual)}</td>
+                        <td style="padding: 10px; text-align: right; background: ${saldoInversion >= 0 ? '#e0f2fe' : '#fee2e2'}; font-weight: bold;">
+                            ${saldoInversion >= 0 ? '$' + formatNumber(saldoInversion) : '-$' + formatNumber(Math.abs(saldoInversion))}
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            document.getElementById('cuerpoTabla').innerHTML = html;
+            
+            const diferencia = saldoInversion;
+            const mensajeResumen = diferencia >= 0 
+                ? `✅ Al final te quedan $${formatNumber(diferencia)} de la inversión alternativa`
+                : `⚠️ Con inversión alternativa terminarías debiendo $${formatNumber(Math.abs(diferencia))}`;
+            
+            const resumenExistente = document.querySelector('.resumen-flujo');
+            if (resumenExistente) resumenExistente.remove();
+            
+            const flujoDiv = document.getElementById('flujoFondos');
+            const resumenDiv = document.createElement('div');
+            resumenDiv.className = 'resumen-flujo';
+            resumenDiv.style.cssText = 'margin-top: 15px; padding: 15px; background: ' + (diferencia >= 0 ? '#d1fae5' : '#fee2e2') + '; border-radius: 10px; font-weight: bold; color: #1f2937;';
+            resumenDiv.textContent = mensajeResumen;
+            flujoDiv.querySelector('.detalle').appendChild(resumenDiv);
+        }
+        
+        function formatNumber(num) {
+            return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calcular();
+            }
+        });
+    </script>
+</body>
+</html>
